@@ -477,13 +477,19 @@ footer{background:var(--hero-bg);border-top:1px solid rgba(248,250,252,.09);padd
             <div style="font-size:.8rem;color:rgba(248,250,252,.62)" data-i18n="quick_success_text">Unser Rechtsteam wird Ihre Anfrage prüfen und sich kurzfristig mit Ihnen in Verbindung setzen.</div>
             <button class="btn btn-sm" onclick="resetQuickForm()" style="margin-top:1rem;background:transparent;color:#F8FAFC;border:1.5px solid rgba(248,250,252,.25)" data-i18n="quick_reset">Neue Anfrage</button>
           </div>
-          <form id="quick-form" onsubmit="submitQuickForm(event)">
+          <form
+            id="quick-form"
+            action="https://formspree.io/f/maqrdyjo"
+            method="POST"
+            onsubmit="submitQuickForm(event)">
+            <input type="hidden" name="_subject" value="New Consultation Request - Finora">
+            <input type="hidden" name="_replyto" value="">
             <div class="form-row">
-              <div class="form-group"><label data-i18n="quick_firstname">Vorname *</label><input type="text" id="qf-first" required/></div>
-              <div class="form-group"><label data-i18n="quick_lastname">Nachname *</label><input type="text" id="qf-last" required/></div>
+              <div class="form-group"><label data-i18n="quick_firstname">Vorname *</label><input type="text" id="qf-first" name="first_name" required/></div>
+              <div class="form-group"><label data-i18n="quick_lastname">Nachname *</label><input type="text" id="qf-last" name="last_name" required/></div>
             </div>
-            <div class="form-group"><label data-i18n="quick_email">E-Mail-Adresse *</label><input type="email" id="qf-email" required/></div>
-            <div class="form-group"><label data-i18n="quick_phone">Telefon (optional)</label><input type="tel" id="qf-phone"/></div>
+            <div class="form-group"><label data-i18n="quick_email">E-Mail-Adresse *</label><input type="email" id="qf-email" name="email" required/></div>
+            <div class="form-group"><label data-i18n="quick_phone">Telefon (optional)</label><input type="tel" id="qf-phone" name="phone"/></div>
             <button type="submit" class="btn btn-accent btn-full" id="qf-submit">
               <span data-i18n="quick_submit">Anfrage einreichen</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -1167,18 +1173,53 @@ function toggleMobile(){document.getElementById('mobile-menu').classList.toggle(
 function closeMobile(){document.getElementById('mobile-menu').classList.remove('open');}
 
 /* ─── QUICK FORM ─── */
-function submitQuickForm(e){
-  e.preventDefault();
-  var btn=document.getElementById('qf-submit');
-  btn.disabled=true;btn.innerHTML='<span>Wird übermittelt…</span>';
-  setTimeout(function(){
-    document.getElementById('quick-form').classList.add('hidden');
-    document.getElementById('quick-success').classList.remove('hidden');
-  },1200);
+async function submitQuickForm(event) {
+    event.preventDefault();
+
+    const form = document.getElementById("quick-form");
+    const submitBtn = document.getElementById("qf-submit");
+
+    // Set reply-to automatically
+    form.querySelector('input[name="_replyto"]').value =
+        document.getElementById("qf-email").value;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "Sending...";
+
+    try {
+        const response = await fetch(form.action, {
+            method: "POST",
+            body: new FormData(form),
+            headers: {
+                Accept: "application/json"
+            }
+        });
+
+        if (response.ok) {
+            form.classList.add("hidden");
+            document.getElementById("quick-success").classList.remove("hidden");
+            form.reset();
+        } else {
+            alert("Submission failed. Please try again.");
+        }
+    } catch (error) {
+        alert("Unable to connect. Please try again.");
+    }
+
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `
+        <span>Submit</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+        </svg>`;
 }
 function resetQuickForm(){
-  document.getElementById('quick-form').classList.remove('hidden');
-  document.getElementById('quick-success').classList.add('hidden');
+  document.getElementById("quick-form").reset();
+  document.getElementById("quick-form").classList.remove("hidden");
+  document.getElementById("quick-success").classList.add("hidden");
   var btn=document.getElementById('qf-submit');
   btn.disabled=false;
   btn.innerHTML='<span data-i18n="quick_submit">'+t('quick_submit')+'</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
